@@ -1,13 +1,14 @@
 from cv2 import cv2
+import fnmatch
 import numpy as np
 import mss
+import os
 import pyautogui
 import time
 import sys
 
+import changeWindow
 import yaml
-
-import requests
 
 cat = """
                                                 _
@@ -36,26 +37,7 @@ cat = """
 
 print(cat)
 
-headers = {
-    'authority': 'plausible.io',
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36',
-    'content-type': 'text/plain',
-    'accept': '*/*',
-    'sec-gpc': '1',
-    'origin': 'https://mpcabete.xyz',
-    'sec-fetch-site': 'cross-site',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-dest': 'empty',
-    'referer': 'https://mpcabete.xyz/',
-    'accept-language': 'en-US,en;q=0.9',
-}
-
-data = '{"n":"pageview","u":"https://mpcabete.xyz/bombcrypto/","d":"mpcabete.xyz","r":"https://mpcabete.xyz/","w":1182}'
-
-response = requests.post('https://plausible.io/api/event', headers=headers, data=data)
-
 if __name__ == '__main__':
-
     stream = open("config.yaml", 'r')
     c = yaml.safe_load(stream)
 ct = c['trashhold']
@@ -65,13 +47,9 @@ pyautogui.PAUSE = c['time_intervals']['interval_between_moviments']
 pyautogui.FAILSAFE = True
 hero_clicks = 0
 login_attempts = 0
+num_of_acoounts = len(fnmatch.filter(os.listdir('targets/accounts'), '*.png'))
 
-
-
-
-
-
-
+# var images
 go_work_img = cv2.imread('targets/go-work.png')
 commom_img = cv2.imread('targets/commom-text.png')
 arrow_img = cv2.imread('targets/go-back-arrow.png')
@@ -80,39 +58,34 @@ x_button_img = cv2.imread('targets/x.png')
 teasureHunt_icon_img = cv2.imread('targets/treasure-hunt-icon.png')
 ok_btn_img = cv2.imread('targets/ok.png')
 connect_wallet_btn_img = cv2.imread('targets/connect-wallet.png')
+select_wallet_img = cv2.imread('targets/select-wallet.png')
 select_wallet_hover_img = cv2.imread('targets/select-wallet-1-hover.png')
 select_metamask_no_hover_img = cv2.imread('targets/select-wallet-1-no-hover.png')
 sign_btn_img = cv2.imread('targets/select-wallet-2.png')
 new_map_btn_img = cv2.imread('targets/new-map.png')
 green_bar = cv2.imread('targets/green-bar.png')
-full_stamina = cv2.imread('targets/full-stamina.png')
-
-def logger(message):
-    datetime = time.localtime()
-    formatted_datetime = time.strftime("%d/%m/%Y %H:%M:%S", datetime)
-
-    formatted_message = "[{}] \n => {} \n\n".format(formatted_datetime, message)
-
-    print(formatted_message)
-
-    if (c['save_log_to_file'] == True):
-        logger_file = open("logger.log", "a")
-        logger_file.write(formatted_message)
-        logger_file.close()
-    
-    return True
+refresh_img = cv2.imread('targets/refresh_1.png')
+empty_cache_hard_reload_img = cv2.imread('targets/empty_cache_hard_reload2.png')
+error_header_img = cv2.imread("targets/error_header.png")
+chest_img = cv2.imread("targets/chest_img.png")
+top_left_img = cv2.imread("targets/top_left.png")
+home_heroes_img = cv2.imread("targets/home_heroes.png")
+coin_img = cv2.imread("targets/coin.png")
+acc_1_img = cv2.imread('targets/accounts/acc_1.png')
+acc_2_img = cv2.imread('targets/accounts/acc_2.png')
 
 def dot():
+    sys.stdout.write(".")
     sys.stdout.flush()
 
-def clickBtn(img,name=None, timeout=3, trashhold = ct['default']):
+def clickBtn(img,name=None, timeout=3, trashhold = ct['default'], button='left'):
     dot()
     if not name is None:
         pass
-        # print('waiting for "{}" button, timeout of {}s'.format(name, timeout))
     start = time.time()
     clicked = False
     while(not clicked):
+        # im = pyautogui.screenshot(region = (0, 0, 300, 400))
         matches = positions(img, trashhold=trashhold)
         if(len(matches)==0):
             hast_timed_out = time.time()-start > timeout
@@ -126,7 +99,11 @@ def clickBtn(img,name=None, timeout=3, trashhold = ct['default']):
 
         x,y,w,h = matches[0]
         pyautogui.moveTo(x+w/2,y+h/2,1)
-        pyautogui.click()
+        print('\nmoved to {}'.format(name))
+        if button=='left':
+            pyautogui.click()
+        elif button=='right':
+            pyautogui.click(button='right')
         return True
 
 def printSreen():
@@ -141,7 +118,7 @@ def printSreen():
 
 def positions(target, trashhold=ct['default']):
     img = printSreen()
-    result = cv2.matchTemplate(img,target,cv2.TM_CCOEFF_NORMED)
+    result = cv2.matchTemplate(img,target,cv2.TM_CCORR_NORMED)
     w = target.shape[1]
     h = target.shape[0]
 
@@ -170,7 +147,7 @@ def scroll():
     if not c['use_click_and_drag_instead_of_scroll']:
         pyautogui.scroll(-c['scroll_size'])
     else:
-        pyautogui.dragRel(0,-c['click_and_drag_amount'],duration=1, button='left')
+        pyautogui.dragRel(0,-c['click_and_drag_amount'],duration=1)
 
 
 def clickButtons():
@@ -193,6 +170,13 @@ def isWorking(bar, buttons):
         if isBelow and isAbove:
             return False
     return True
+    
+def hardReload():
+    sys.stdout.write('\nTrying to Hard reload.')
+    pyautogui.press('f12')
+    clickBtn(refresh_img, name='refresh_bhtton', timeout=10, button='right')
+    clickBtn(empty_cache_hard_reload_img, name='empty_cache_hard_reload_button', timeout=10)
+    pyautogui.press('f12')
 
 def clickGreenBarButtons():
     # ele clicka nos q tao trabaiano mas axo q n importa
@@ -205,7 +189,7 @@ def clickGreenBarButtons():
         if not isWorking(bar, buttons):
             not_working_green_bars.append(bar)
     if len(not_working_green_bars) > 0:
-        logger('Clicking in %d heroes.' % len(not_working_green_bars))
+        sys.stdout.write('\nclicking in %d heroes.' % len(not_working_green_bars))
 
     # se tiver botao com y maior que bar y-10 e menor que y+10
     for (x, y, w, h) in not_working_green_bars:
@@ -217,26 +201,6 @@ def clickGreenBarButtons():
         #cv2.rectangle(sct_img, (x, y) , (x + w, y + h), (0,255,255),2)
     return len(not_working_green_bars)
 
-def clickFullBarButtons():
-    offset = 100
-    full_bars = positions(full_stamina, trashhold=ct['default'])
-    buttons = positions(go_work_img, trashhold=ct['go_to_work_btn'])
-
-    not_working_full_bars = []
-    for bar in full_bars:
-        if not isWorking(bar, buttons):
-            not_working_full_bars.append(bar)
-
-    if len(not_working_full_bars) > 0:
-        logger('Clicking in %d heroes.' % len(not_working_full_bars))
-
-    for (x, y, w, h) in not_working_full_bars:
-        pyautogui.moveTo(x+offset+(w/2),y+(h/2),1)
-        pyautogui.click()
-        global hero_clicks
-        hero_clicks = hero_clicks + 1
-    
-    return len(not_working_full_bars)
 
 def goToHeroes():
     if clickBtn(arrow_img):
@@ -246,13 +210,16 @@ def goToHeroes():
     # time.sleep(5)
     clickBtn(hero_img)
     # time.sleep(5)
+    # validate if heroes is loaded
+    for x in range(15):
+        sys.stdout.write('\nCheck if herores has loaded')
+        if (pyautogui.locateOnScreen(home_heroes_img, confidence =.8) is not None):
+            return   
+        time.sleep(1)
+    
 
 def goToGame():
-    # in case of server overload popup
     clickBtn(x_button_img)
-    # time.sleep(3)
-    clickBtn(x_button_img)
-
     clickBtn(teasureHunt_icon_img)
 
 def refreshHeroesPositions():
@@ -263,16 +230,23 @@ def refreshHeroesPositions():
 
 def login():
     global login_attempts
-
-    if login_attempts > 3:
-        logger('Too many login attempts, refreshing.')
-        login_attempts = 0
-        pyautogui.press('f5')
+    if (pyautogui.locateOnScreen(chest_img, confidence =.8) is not None):
+        sys.stdout.write('\nGame is logged in')
         return
+    
+    if login_attempts > 3:
+       sys.stdout.write('\ntoo many login attempts, refreshing.')
+       login_attempts = 0
+       hardReload()
+       return
 
     if clickBtn(connect_wallet_btn_img, name='connectWalletBtn', timeout = 10):
-        login_attempts = login_attempts + 1
-        logger('Connect wallet button detected, logging in!')
+        sys.stdout.write('\nConnect wallet button detected, logging in!')
+        #TODO mto ele da erro e poco o botao n abre
+        # time.sleep(10)
+        
+    if clickBtn(select_wallet_img, name='selectWalletBtn', timeout = 10):
+            sys.stdout.write('\nSelecting wallet!')
         #TODO mto ele da erro e poco o botao n abre
         # time.sleep(10)
 
@@ -282,9 +256,9 @@ def login():
         # print('sign button clicked')
         # print('{} login attempt'.format(login_attempts))
         # time.sleep(5)
-        if clickBtn(teasureHunt_icon_img, name='teasureHunt', timeout = 15):
+        #if clickBtn(teasureHunt_icon_img, name='teasureHunt', timeout = 15):
             # print('sucessfully login, treasure hunt btn clicked')
-            login_attempts = 0
+         #   login_attempts = 0
         # time.sleep(15)
         return
         # click ok button
@@ -315,84 +289,97 @@ def login():
         # time.sleep(15)
         # print('ok button clicked')
 
+    # checks for login errors for 60 sec
+    for x in range(60):
+        sys.stdout.write('\nCheck if login has errors')
+        if (pyautogui.locateOnScreen(error_header_img, confidence =.8) is not None):
+            sys.stdout.write('\nConnection error detected!')
+            login()
+        if (pyautogui.locateOnScreen(chest_img, confidence =.8) is not None):
+            sys.stdout.write('\nSuccessful login!')
+            return    
+        time.sleep(1)
+    return
 
-
+def simulateMove():
+    clickBtn(top_left_img)
+    clickBtn(coin_img)
 
 def refreshHeroes():
     goToHeroes()
-
-    if c['select_heroes_mode'] == "full":
-        logger("Sending heroes with full stamina bar to work!")
-    elif c['select_heroes_mode'] == "green":
-        logger("Sending heroes with green stamina bar to work!")
+    if c['only_click_heroes_with_green_bar']:
+        print('\nSending heroes with an green stamina bar to work!')
     else:
-        logger("Sending all heroes to work!")
-
+        sys.stdout.write('\nSending all heroes to work!')
     buttonsClicked = 1
-    empty_scrolls_attempts = c['scroll_attemps']
-
+    empty_scrolls_attempts = 2
     while(empty_scrolls_attempts >0):
-        if c['select_heroes_mode'] == 'full':
-            buttonsClicked = clickFullBarButtons()
-        elif c['select_heroes_mode'] == 'green':
+        if c['only_click_heroes_with_green_bar']:
             buttonsClicked = clickGreenBarButtons()
         else:
             buttonsClicked = clickButtons()
-        
         if buttonsClicked == 0:
             empty_scrolls_attempts = empty_scrolls_attempts - 1
+            # print('no buttons found after scrolling, trying {} more times'.format(empty_scrolls_attempts))
+        # !mudei scroll pra baixo
         scroll()
         time.sleep(2)
-    logger('{} heroes sent to work so far'.format(hero_clicks))
+    sys.stdout.write('\n{} heroes sent to work so far'.format(hero_clicks))
     goToGame()
 
 def main():
     time.sleep(5)
     t = c['time_intervals']
-
-    last = {
-    "login" : 0,
-    "heroes" : 0,
-    "new_map" : 0,
-    "refresh_heroes" : 0
-    }
+    lasts = []
+    for x in range(num_of_acoounts):
+        lasts.append({
+            "login" : 0,
+            "heroes" : 0,
+            "new_map" : 0,
+            "refresh_heroes" : 0
+        })
 
     while True:
-        now = time.time()
+        for x in range(num_of_acoounts):
+            changeWindow.goToAccount(x + 1)
+            
+            now = time.time()
 
-        if now - last["heroes"] > t['send_heroes_for_work'] * 60:
-            last["heroes"] = now
-            logger('Sending heroes to work.')
-            refreshHeroes()
+            if now - lasts[x]["login"] > t['check_for_login'] * 60:
+                sys.stdout.write("\nChecking if game has disconnected.")
+                sys.stdout.flush()
+                lasts[x]["login"] = now
+                login()
+                sys.stdout.write("\n")
+            else:
+                simulateMove()
+            
+            if now - lasts[x]["heroes"] > t['send_heroes_for_work'] * 60:
+                lasts[x]["heroes"] = now
+                sys.stdout.write('\nSending heroes to work.')
+                refreshHeroes()
+                sys.stdout.write("\n")
 
-        if now - last["login"] > t['check_for_login'] * 60:
-            logger("Checking if game has disconnected.")
+            if now - lasts[x]["new_map"] > t['check_for_new_map_button']:
+                lasts[x]["new_map"] = now
+                if clickBtn(new_map_btn_img):
+                    with open('new-map.log','a') as new_map_log:
+                        new_map_log.write(str(time.time())+'\n')
+                    sys.stdout.write('\nNew Map button clicked!\n')
+
+            if now - lasts[x]["refresh_heroes"] > t['refresh_heroes_positions'] * 60 :
+                lasts[x]["refresh_heroes"] = now
+                sys.stdout.write('\nRefreshing Heroes Positions.\n')
+                refreshHeroesPositions()
+
+            #clickBtn(teasureHunt)
+            sys.stdout.write(".")
             sys.stdout.flush()
-            last["login"] = now
-            login()
 
-        if now - last["new_map"] > t['check_for_new_map_button']:
-            last["new_map"] = now
-            if clickBtn(new_map_btn_img):
-                with open('new-map.log','a') as new_map_log:
-                    new_map_log.write(str(time.time())+'\n')
-                logger('New Map button clicked!')
-
-        if now - last["refresh_heroes"] > t['refresh_heroes_positions'] * 60 :
-            last["refresh_heroes"] = now
-            logger('Refreshing Heroes Positions.')
-            refreshHeroesPositions()
-
-        #clickBtn(teasureHunt)
-        logger(".")
-        sys.stdout.flush()
-
-        time.sleep(1)
+            time.sleep(1)
 
 
 main()
-
-
 
 
 
