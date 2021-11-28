@@ -10,33 +10,6 @@ import sys
 import changeWindow
 import yaml
 
-cat = """
-                                                _
-                                                \`*-.
-                                                 )  _`-.
-                                                .  : `. .
-                                                : _   '  \\
-                                                ; *` _.   `*-._
-                                                `-.-'          `-.
-                                                  ;       `       `.
-                                                  :.       .        \\
-                                                  . \  .   :   .-'   .
-                                                  '  `+.;  ;  '      :
-                                                  :  '  |    ;       ;-.
-                                                  ; '   : :`-:     _.`* ;
-                                               .*' /  .*' ; .*`- +'  `*'
-                                               `*-*   `*-*  `*-*'
-====== Please, consider buying me an coffe :) =========================
-==== 0xbd06182D8360FB7AC1B05e871e56c76372510dDf =======================
-==== https://www.paypal.com/donate?hosted_button_id=JVYSC6ZYCNQQQ =====
-=======================================================================
-
->>---> Press ctrl + c to kill the bot.
->>---> Some configs can be fount in the config.yaml file.
-"""
-
-print(cat)
-
 if __name__ == '__main__':
     stream = open("config.yaml", 'r')
     c = yaml.safe_load(stream)
@@ -118,7 +91,7 @@ def printSreen():
 
 def positions(target, trashhold=ct['default']):
     img = printSreen()
-    result = cv2.matchTemplate(img,target,cv2.TM_CCORR_NORMED)
+    result = cv2.matchTemplate(img,target,cv2.TM_CCOEFF_NORMED)
     w = target.shape[1]
     h = target.shape[0]
 
@@ -211,7 +184,7 @@ def goToHeroes():
     clickBtn(hero_img)
     # time.sleep(5)
     # validate if heroes is loaded
-    for x in range(15):
+    for x in range(30):
         sys.stdout.write('\nCheck if herores has loaded')
         if (pyautogui.locateOnScreen(home_heroes_img, confidence =.8) is not None):
             return   
@@ -312,7 +285,7 @@ def refreshHeroes():
     else:
         sys.stdout.write('\nSending all heroes to work!')
     buttonsClicked = 1
-    empty_scrolls_attempts = 2
+    empty_scrolls_attempts = 3
     while(empty_scrolls_attempts >0):
         if c['only_click_heroes_with_green_bar']:
             buttonsClicked = clickGreenBarButtons()
@@ -377,7 +350,6 @@ def main():
             sys.stdout.flush()
 
             time.sleep(1)
-
 
 main()
 
